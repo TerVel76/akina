@@ -62,9 +62,8 @@ function resize($filename, $resize_width, $resize_height, $texttype=false, $file
 				$image->backgroundResize($resize_width,$resize_height, 'shrink'); //option shrink
 
 				//текст на превью
-				if (isset($texttype) and $texttype!="nothing")
-			  {
-
+				if (isset($texttype) and $texttype and $texttype!="nothing")
+				{
 					$filesize = formatfilesize(filesize($filename));
 
 					if ($texttype == 'dimensions')
@@ -72,7 +71,7 @@ function resize($filename, $resize_width, $resize_height, $texttype=false, $file
 					else
 						$text=$_POST['text'];
 
-					$DARKNESS=70;
+					$DARKNESS=70;//FIXME: вынести в конфиг!
 
 					//"полупрозрачный" слой подложки под текст
 					$imglayer = imagecreatetruecolor($width, 15);
@@ -92,7 +91,7 @@ function resize($filename, $resize_width, $resize_height, $texttype=false, $file
 
 					//сам текст
 					$image = new GDEnhancer($save['contents']);
-					$image->layerText($text, $config['site_dir']."/bender.otf", '10', '#FFFFFF', 0, 1);
+					$image->layerText($text, $config['site_dir']."/K1FS.ttf", '10', '#FFFFFF', 0, 1);
 					$image->layerMove(0, "top", 2, $resize_height-14);
 
 				}
@@ -211,10 +210,7 @@ function check_and_move($filename)
 				case 'image/png'  : $ext='png'; break;
 				case 'image/bmp'  : $ext='bmp'; break;
 				case 'image/x-ms-bmp' : $ext='bmp'; break;
-				default: $ext='';
-				        if ($info['mime']=='') $info['mime']='n/a';
-								$local_error[]="Ошибка: Неверный MIME-тип изображения, допускаются ".implode(', ',$config['mimes']).". Вы пытались залить ".$info['mime'];
-								break;
+				default: $ext='fail'; $info['mime']='n/a'; break;
 			}
 
 	$stat=stat($config['working_dir'].$filename);
@@ -222,7 +218,10 @@ function check_and_move($filename)
 	$partes = explode('.', $filename);
 	$extension = strtolower($partes[count($partes) - 1]);
 
-	if (!in_array($ext, $config['extensions']))
+	if ($info['mime']=='n/a')
+		$local_error[]="Ошибка: Неверный MIME-тип изображения, допускаются ".implode(', ',$config['mimes']).". Вы пытались залить ".$info['mime'];
+		
+	elseif (!in_array($ext, $config['extensions']))
 		$local_error[]="Ошибка: Неверное расширение изображения, допускаются ".strtoupper(implode(', ',$config['extensions'])).". Вы пытались залить ".strtoupper($extension);
 
 	elseif ($stat['size'] > $config['max_size_byte'])
